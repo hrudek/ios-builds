@@ -35,6 +35,9 @@ jobs:
     outputs:
       config: ${{ steps.config.outputs.config }}
       sha: ${{ steps.source.outputs.sha }}
+      short_sha: ${{ steps.source.outputs.short_sha }}
+      label: ${{ steps.source.outputs.label }}
+      artifact_suffix: ${{ steps.source.outputs.artifact_suffix }}
     steps:
       - name: Require reviewed default branch
         env:
@@ -81,13 +84,30 @@ jobs:
           with urllib.request.urlopen(request, timeout=30) as response:
               sha = json.load(response)['sha']
           assert re.fullmatch(r'[0-9a-f]{40}', sha)
+          short_sha = sha[:7]
+          # Branch/tag name for display; plain commit refs (e.g. the pinned default) have none.
+          is_commit = re.fullmatch(r'[0-9a-f]{7,40}', config['ref']) is not None
+          branch = None if is_commit else config['ref']
+          label = f'{branch} @ {short_sha}' if branch else short_sha
+          # Artifact names must not contain '/', so feature/foo becomes feature-foo.
+          slug = re.sub(r'[^A-Za-z0-9_.-]+', '-', branch).strip('-')[:60] if branch else ''
+          artifact_suffix = f'{slug}-{short_sha}' if slug else short_sha
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-              output.write(f'sha={sha}\n')
+              output.write(f'sha={sha}\nshort_sha={short_sha}\nlabel={label}\nartifact_suffix={artifact_suffix}\n')
+          commit_url = f'https://github.com/{config["repository"]}/commit/{sha}'
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
-              summary.write(f'### Source\n{config["repository"]}@`{sha}`\n\nDistribution: **{os.environ["DISTRIBUTION"]}**\n')
+              summary.write(
+                  '### Source\n'
+                  f'| | |\n|---|---|\n'
+                  f'| Repository | `{config["repository"]}` |\n'
+                  f'| Branch/Ref | `{branch or "pinned commit"}` |\n'
+                  f'| Commit | [`{short_sha}`]({commit_url}) |\n'
+                  f'| Distribution | **{os.environ["DISTRIBUTION"]}** |\n'
+              )
           PY
 
   build:
+    name: Build · ${{ needs.resolve.outputs.label }}
     needs: resolve
     runs-on: macos-26
     timeout-minutes: 90
@@ -128,7 +148,7 @@ jobs:
       - name: Upload encrypted archive and public provenance
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: ${{ inputs.app }}-unsigned-${{ needs.resolve.outputs.sha }}
+          name: ${{ inputs.app }}-unsigned-${{ needs.resolve.outputs.artifact_suffix }}
           path: |
             ${{ runner.temp }}/output/archive.zip.age
             ${{ runner.temp }}/output/build.json
@@ -136,6 +156,7 @@ jobs:
           retention-days: 7
 
   sign:
+    name: Sign (${{ inputs.distribution }}) · ${{ needs.resolve.outputs.label }}
     if: inputs.distribution != 'unsigned'
     needs: [resolve, build]
     runs-on: macos-26
@@ -158,7 +179,7 @@ jobs:
         run: bash scripts/select-xcode.sh
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: ${{ inputs.app }}-unsigned-${{ needs.resolve.outputs.sha }}
+          name: ${{ inputs.app }}-unsigned-${{ needs.resolve.outputs.artifact_suffix }}
           path: ${{ runner.temp }}/input
       - name: Decrypt archive with environment-protected identity
         env:
@@ -179,7 +200,7 @@ jobs:
       - name: Upload encrypted IPA and public provenance
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: ${{ inputs.app }}-${{ inputs.distribution }}-${{ needs.resolve.outputs.sha }}
+          name: ${{ inputs.app }}-${{ inputs.distribution }}-${{ needs.resolve.outputs.artifact_suffix }}
           path: ${{ runner.temp }}/encrypted-deliverables/
           if-no-files-found: error
           retention-days: 7
