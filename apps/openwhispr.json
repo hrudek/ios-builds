@@ -9,5 +9,6 @@
   "bundle_id": "com.bearylabs.openwhispr",
   "display_name": "OpenWhispr",
   "url_scheme": "bearylabs-openwhispr",
+  "auth_scheme": "openwhispr-dev",
   "extension_suffixes": ["keyboard", "activity"]
 }

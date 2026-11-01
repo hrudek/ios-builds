@@ -67,6 +67,25 @@ class ConfigTests(unittest.TestCase):
             self.assertIn('OPENWHISPR_IOS_BUNDLE_IDENTIFIER=com.bearylabs.openwhispr', env_file.read_text())
             self.assertIn('OPENWHISPR_DISPLAY_NAME=OpenWhispr\n', env_file.read_text())
             self.assertIn('OPENWHISPR_KEYBOARD_DISPLAY_NAME=OpenWhispr\n', env_file.read_text())
+            self.assertIn('OPENWHISPR_SCHEME=bearylabs-openwhispr\n', env_file.read_text())
+            self.assertIn('EXPO_PUBLIC_OPENWHISPR_SCHEME=openwhispr-dev\n', env_file.read_text())
+            self.assertEqual(result['scheme'], ['bearylabs-openwhispr', 'openwhispr-dev'])
+
+    def test_reject_invalid_auth_scheme(self):
+        manifest = json.loads((ROOT / 'apps/openwhispr.json').read_text())
+        for scheme in ('bad scheme', 'x://', '1abc', 'evil\nKEY=1'):
+            with self.subTest(scheme=scheme), tempfile.TemporaryDirectory() as tmp:
+                apps = Path(tmp, 'apps')
+                apps.mkdir()
+                (apps / 'probe.json').write_text(json.dumps(dict(manifest, auth_scheme=scheme)))
+                import config as config_module
+                original = config_module.ROOT
+                config_module.ROOT = Path(tmp)
+                try:
+                    with self.assertRaises(ValueError):
+                        load_app('probe')
+                finally:
+                    config_module.ROOT = original
 
 
 class ProfileTests(unittest.TestCase):

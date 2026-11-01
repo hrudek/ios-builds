@@ -24,6 +24,9 @@ def load_app(name):
         raise ValueError("Invalid bundle ID")
     if not re.fullmatch(r"[A-Za-z0-9_. -]+", config["scheme"]):
         raise ValueError("Invalid Xcode scheme")
+    for key in ("url_scheme", "auth_scheme"):
+        if key in config and not re.fullmatch(r"[a-z][a-z0-9+.-]{0,63}", config[key]):
+            raise ValueError(f"Invalid {key}")
     for suffix in config["extension_suffixes"]:
         if not re.fullmatch(r"[A-Za-z0-9-]+", suffix):
             raise ValueError("Invalid extension suffix")

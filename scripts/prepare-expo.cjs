@@ -15,7 +15,8 @@ module.exports = (...args) => {
   if (original && typeof original.then === 'function') throw new Error('Async Expo config not supported');
   const config = { ...original, ios: { ...original.ios } };
   delete config.owner;
-  config.scheme = identity.url_scheme;
+  // The auth scheme is registered too, so OAuth callbacks sent to it return to this app.
+  config.scheme = identity.auth_scheme ? [identity.url_scheme, identity.auth_scheme] : identity.url_scheme;
   config.ios.bundleIdentifier = identity.bundle_id;
   config.ios.infoPlist = { ...config.ios.infoPlist, CFBundleDisplayName: identity.display_name };
   delete config.ios.appleTeamId;
@@ -38,6 +39,9 @@ const env = {
   SENTRY_ALLOW_FAILURE: 'true',
   EXPO_NO_TELEMETRY: '1',
 };
+// OpenWhispr's auth server only trusts its own schemes as origin (Better Auth
+// trustedOrigins); the fork's url_scheme is refused with INVALID_ORIGIN.
+if (config.auth_scheme) env.EXPO_PUBLIC_OPENWHISPR_SCHEME = config.auth_scheme;
 // Public configuration only: never put provider credentials in the bundle.
 for (const [key, value] of Object.entries(env)) {
   if (/[\r\n]/.test(value)) throw new Error('Multiline environment value');
