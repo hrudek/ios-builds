@@ -1,5 +1,5 @@
 {
-  "repository": "anomalyco/hex",
+  "repository": "bearylabs/hex",
   "default_ref": "54d1ebfccfa981ad73c5a2fd833504a55e6676c9",
   "directory": "ios",
   "adapter": "xcodegen",
