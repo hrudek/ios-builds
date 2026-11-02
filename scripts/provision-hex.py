@@ -54,14 +54,25 @@ def main():
         if len(ids) != 1:
             raise ValueError('Expected registered bundle ID: ' + bundle)
         name = 'Hex Ad Hoc ' + bundle
-        existing = apple.request('GET', '/v1/profiles?filter[name]=' + name.replace(' ', '%20') + '&limit=100')['data']
-        existing = [p for p in existing if p['attributes']['profileState'] == 'ACTIVE'
-                    and p['attributes']['name'] == name]
+        response = apple.request('GET', '/v1/profiles?filter[name]=' + name.replace(' ', '%20') + '&limit=100')
+        if response.get('links', {}).get('next'):
+            raise ValueError('Profile pagination needs review')
+        matching = [p for p in response['data'] if p['attributes']['name'] == name
+                    or p['attributes']['name'].startswith(name + ' revision ')]
+        existing = [p for p in matching if p['attributes']['profileState'] == 'ACTIVE']
         if len(existing) > 1:
             raise ValueError('Multiple active profiles; review in portal: ' + bundle)
         if existing:
             profile = existing[0]
         else:
+            # A capability change invalidates old profiles. Keep them untouched,
+            # but use a fresh name because Apple rejects duplicate profile names.
+            if matching:
+                used_names = {p['attributes']['name'] for p in matching}
+                revision = 1
+                while f'{name} revision {revision}' in used_names:
+                    revision += 1
+                name = f'{name} revision {revision}'
             profile = apple.request('POST', '/v1/profiles', {'data': {
                 'type': 'profiles',
                 'attributes': {'name': name, 'profileType': 'IOS_APP_ADHOC'},
