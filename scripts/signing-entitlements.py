@@ -20,6 +20,11 @@ from archive import bundles, validate
 def required_entitlements(config, bundle_id):
     if bundle_id not in config['bundle_ids']:
         raise ValueError('Unexpected bundle ID')
+    if config['app'] == 'hex':
+        # The widget extension does not access shared storage; app + keyboard do.
+        if bundle_id == f'{config["bundle_id"]}.widgets':
+            return {}
+        return {'com.apple.security.application-groups': [f'group.{config["bundle_id"]}']}
     if config['app'] != 'openwhispr':
         raise ValueError('Review signing entitlements before enabling another app')
     result = {'com.apple.security.application-groups': [f'group.{config["bundle_id"]}']}

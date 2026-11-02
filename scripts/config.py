@@ -18,8 +18,10 @@ def load_app(name):
     path = PurePosixPath(config["directory"])
     if path.is_absolute() or ".." in path.parts or not path.parts:
         raise ValueError("Directory must be relative and stay inside checkout")
-    if config["adapter"] != "expo":
-        raise ValueError("Only the expo adapter is implemented so far")
+    if config["adapter"] not in ("expo", "xcodegen"):
+        raise ValueError("Unsupported build adapter")
+    if config["adapter"] == "xcodegen" and not re.fullmatch(r"[A-Za-z0-9_-]+\.xcodeproj", config["project"]):
+        raise ValueError("Invalid Xcode project")
     if not re.fullmatch(r"[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+", config["bundle_id"]):
         raise ValueError("Invalid bundle ID")
     if not re.fullmatch(r"[A-Za-z0-9_. -]+", config["scheme"]):

@@ -1,0 +1,17 @@
+{
+  "repository": "anomalyco/hex",
+  "default_ref": "54d1ebfccfa981ad73c5a2fd833504a55e6676c9",
+  "directory": "ios",
+  "adapter": "xcodegen",
+  "scheme": "HEXMobile",
+  "project": "HEXMobile.xcodeproj",
+  "node": "24",
+  "ruby": "3.3",
+  "bundle_id": "com.bearylabs.hex",
+  "display_name": "Hex",
+  "url_scheme": "bearylabs-hex",
+  "extension_suffixes": [
+    "keyboard",
+    "widgets"
+  ]
+}

@@ -7,7 +7,7 @@ on:
       app:
         description: Reviewed app manifest (apps/<name>.json)
         type: choice
-        options: [openwhispr]
+        options: [openwhispr, hex]
         default: openwhispr
         required: true
       source_ref:
@@ -135,16 +135,23 @@ jobs:
           XCODE_PATH: ${{ vars.XCODE_PATH }}
         run: bash control/scripts/select-xcode.sh
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: fromJSON(needs.resolve.outputs.config).adapter == 'expo'
         with:
           node-version: ${{ fromJSON(needs.resolve.outputs.config).node }}
       - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1
+        if: fromJSON(needs.resolve.outputs.config).adapter == 'expo'
         with:
           ruby-version: ${{ fromJSON(needs.resolve.outputs.config).ruby }}
           bundler: '2.4.14'
       - name: Configure personal app identity and disable upstream OTA
+        if: fromJSON(needs.resolve.outputs.config).adapter == 'expo'
         run: node control/scripts/prepare-expo.cjs "source/$(python3 -c 'import json,os; print(json.loads(os.environ["APP_CONFIG"])["directory"])')"
-      - name: Build unsigned device archive (all extensions included)
+      - name: Build unsigned Expo device archive (all extensions included)
+        if: fromJSON(needs.resolve.outputs.config).adapter == 'expo'
         run: bash control/scripts/build-expo.sh
+      - name: Build unsigned native XcodeGen device archive (all extensions included)
+        if: fromJSON(needs.resolve.outputs.config).adapter == 'xcodegen'
+        run: bash control/scripts/build-xcodegen.sh
       - name: Upload encrypted archive and public provenance
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

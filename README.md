@@ -7,7 +7,9 @@ No Mac is needed on your desk.
 
 ## Status
 
-- First app: **OpenWhispr**, including its keyboard and Live Activity extensions.
+- **OpenWhispr** (Expo), including keyboard and Live Activity extensions.
+- **Hex** (native Swift/XcodeGen), including keyboard and widget extensions.
+  Setup and first-device-build status: **[docs/HEX.md](docs/HEX.md)**.
 - Manually dispatched **unsigned**, **Ad Hoc** and **TestFlight** paths implemented.
 - Build and signing run on **separate ephemeral runners**. Source installation and
   build hooks do not receive Apple signing credentials.
@@ -154,12 +156,17 @@ assets. Missing licensed brand fonts use upstream's fallback.
 3. Create its Apple identifiers, profiles and `ios-<app>-<distribution>` environments.
 4. Add tests and validate the build before enabling signing.
 
-Currently implemented: the **Expo adapter** for CommonJS `app.config.js` projects
-with a Gemfile, one generated Xcode workspace and an explicitly named scheme.
-OpenWhispr-specific environment overrides live in `prepare-expo.cjs`. Another
-Expo project may need a reviewed preparation hook for its extensions/services.
-Native Swift/Xcode and Flutter adapters are intentionally **not implemented yet**;
-add an adapter once, rather than copy an entire workflow per app.
+Implemented adapters:
+
+- **Expo** for CommonJS `app.config.js` projects with a Gemfile, one generated
+  Xcode workspace and an explicitly named scheme. OpenWhispr-specific overrides
+  live in `prepare-expo.cjs`.
+- **XcodeGen** for native Swift projects, currently reviewed for Hex. Its personal
+  identity hook is `prepare-hex.py`; packaging and signing retain the same isolated,
+  encrypted-artifact path. Another native app needs its own reviewed preparation
+  and entitlement rules before signing is enabled.
+
+Flutter is not implemented.
 
 **Private source repositories are rejected**, even if a future token could read
 them: compiler/package-manager output can expose source in public logs. Use a
