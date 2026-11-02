@@ -24,9 +24,10 @@ No Mac is needed on your desk.
 - Default source is a reviewed, pinned commit; a branch/tag/commit override is
   resolved to its exact SHA before checkout and recorded with Xcode version.
 - Config/profile validation tests and workflow linting run on Linux.
-- **Not yet validated with a real macOS build or Apple credentials.** The first
-  device build may expose upstream/toolchain issues. No paid macOS build is
-  triggered by a push. Signing is disabled until explicitly enabled.
+- **Hex's first unsigned macOS device archive passed** (see its setup guide).
+  Signing and on-device behavior require separate validation per app. No macOS
+  build is triggered by a push; signed builds require configured profiles and
+  protected-environment approval.
 
 This uses Xcode directly, **not EAS Build**. No Expo cloud account is required.
 An unsigned archive is NOT installable. A valid App Store Connect API key alone

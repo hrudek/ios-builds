@@ -85,7 +85,10 @@ Ad Hoc is sufficient for the registered personal iPhone.
 
 ## Verification limits
 
-Local manifest/preparation/entitlement tests are automated. A successful unsigned
-CI build proves compilation/archive layout, not valid signing or hardware behavior.
+All 27 local tests and the GitHub infrastructure checks (including workflow lint)
+passed. The first unsigned device archive passed on macOS:
+<https://github.com/bearylabs/ios-builds/actions/runs/41421395787>.
+It includes the app, keyboard and widget extension and is published encrypted.
+This proves compilation/archive layout, not valid signing or hardware behavior.
 Real microphone capture, background sessions, keyboard handoff and transcription
 still need an installed-device test; see `~/dev/hex/ios/README.md`.
