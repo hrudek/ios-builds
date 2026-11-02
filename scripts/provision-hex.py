@@ -46,12 +46,17 @@ def main():
     paths = []
     missing = []
     for bundle in config['bundle_ids']:
-        ids = apple.request('GET', '/v1/bundleIds?filter[identifier]=' + bundle)['data']
+        # Apple identifier/name filters can return prefix matches.
+        response = apple.request('GET', '/v1/bundleIds?filter[identifier]=' + bundle + '&limit=200')
+        if response.get('links', {}).get('next'):
+            raise ValueError('Bundle ID pagination needs review')
+        ids = [item for item in response['data'] if item['attributes']['identifier'] == bundle]
         if len(ids) != 1:
             raise ValueError('Expected registered bundle ID: ' + bundle)
         name = 'Hex Ad Hoc ' + bundle
         existing = apple.request('GET', '/v1/profiles?filter[name]=' + name.replace(' ', '%20') + '&limit=100')['data']
-        existing = [p for p in existing if p['attributes']['profileState'] == 'ACTIVE']
+        existing = [p for p in existing if p['attributes']['profileState'] == 'ACTIVE'
+                    and p['attributes']['name'] == name]
         if len(existing) > 1:
             raise ValueError('Multiple active profiles; review in portal: ' + bundle)
         if existing:
