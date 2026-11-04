@@ -17,13 +17,24 @@ only in the disposable CI checkout, including keyboard discovery and tests.
 It does not change the desktop app, remove extensions, or use upstream signing
 credentials. The widget has no App Group entitlement in the reviewed source.
 
+## Current status
+
+Ad Hoc build and signing passed:
+<https://github.com/bearylabs/ios-builds/actions/runs/41423652545>.
+The installable IPA is available locally at
+`~/dev/ios-builds/downloads/hex-41423652545/HEX.ipa`.
+Actual signed entitlements were verified on the macOS runner; local checks also
+verified the complete bundle set and embedded distribution profiles. No device
+installation or hardware behavior test has been performed.
+
 ## Apple setup
 
 The three App IDs have been created through the existing local Apple API helper.
 App Groups capability is enabled for the app and keyboard. The existing Apple
 Distribution certificate is reused; unrelated certificates/profiles are untouched.
 
-**Manual portal step required:** the public App Store Connect API does not expose
+**Manual portal step completed for this account.** The following instructions
+are retained for future setup: the public App Store Connect API does not expose
 App Group creation or association.
 
 1. Open <https://developer.apple.com/account/resources/identifiers/list/applicationGroup>.
@@ -43,14 +54,33 @@ This local-only script loads the private helper from
 `~/.local/share/ios-build-signing/apple-api.py`, reuses the existing distribution
 certificate and exactly the devices in the existing Ad Hoc profile, and stores
 profiles privately outside Git. It refuses to upload profiles without the exact
-required App Group. It never revokes or deletes Apple resources. If profiles were
-created before association, regenerate those Hex profiles in the portal before
-rerunning the script.
+required App Group. It never revokes or deletes Apple resources. If capability
+changes invalidate a profile, it creates a new revision with a unique name,
+leaving the invalid profile untouched. Active profiles with outdated groups must
+be regenerated in the portal before rerunning the script.
 
 The GitHub environment `ios-hex-ad-hoc` is restricted to `main`, requires owner
 approval and disables administrator bypass. Certificate, password and artifact
-decryption identity are configured. `IOS_PROFILES_ZIP_BASE64` is installed only
-after the profiles validate. Do not approve signing before this setup completes.
+decryption identity and validated `IOS_PROFILES_ZIP_BASE64` are configured.
+Do not approve future signing jobs before reviewing the source and provenance.
+
+## Unit tests (simulator)
+
+`test-ios.yml` runs `xcodebuild test` for the `HEXMobile` scheme on the newest
+available iPhone simulator of a `macos-26` runner. It has no signing environment
+or secrets and runs the source as-is (no identity rewrite). The default
+`only_testing` runs the autocorrect suites; pass an empty value to run every test.
+
+```sh
+cd ~/dev/ios-builds
+gh workflow run test-ios.yml -f app=hex -f source_ref=BRANCH
+gh workflow run test-ios.yml -f app=hex -f source_ref=BRANCH -f only_testing=
+gh run watch RUN_ID   # summary lists passed/failed test cases
+gh run download RUN_ID --name hex-tests --dir downloads/hex-tests-RUN_ID
+```
+
+Simulator tests cover the engine logic; they do not prove keyboard-extension
+behavior on a device.
 
 ## Build and install
 
@@ -65,9 +95,11 @@ gh run list --workflow build-ios.yml
 gh run watch RUN_ID
 # Approve the ios-hex-ad-hoc environment on the run page after reviewing the SHA.
 gh run download RUN_ID --pattern 'hex-ad-hoc-*' --dir downloads/hex-RUN_ID
+encrypted_ipa=$(find downloads/hex-RUN_ID -name 'HEX.ipa.age' -print -quit)
+umask 077
 ~/.local/share/ios-build-signing/age-tools/age/age --decrypt \
   --identity ~/.local/share/ios-build-signing/artifacts.agekey \
-  --output downloads/hex-RUN_ID/HEX.ipa downloads/hex-RUN_ID/HEX.ipa.age
+  --output downloads/hex-RUN_ID/HEX.ipa "$encrypted_ipa"
 ~/dev/apple-dev-setup/iphone-wifi install "$PWD/downloads/hex-RUN_ID/HEX.ipa"
 ~/dev/apple-dev-setup/iphone-wifi launch com.bearylabs.hex
 ```
@@ -89,6 +121,8 @@ All 27 local tests and the GitHub infrastructure checks (including workflow lint
 passed. The first unsigned device archive passed on macOS:
 <https://github.com/bearylabs/ios-builds/actions/runs/41421395787>.
 It includes the app, keyboard and widget extension and is published encrypted.
-This proves compilation/archive layout, not valid signing or hardware behavior.
+The subsequent Ad Hoc run linked above also passed signing/export and actual
+Mach-O entitlement verification for all three bundles. That proves the checked
+signatures and capabilities, not successful installation or hardware behavior.
 Real microphone capture, background sessions, keyboard handoff and transcription
 still need an installed-device test; see `~/dev/hex/ios/README.md`.

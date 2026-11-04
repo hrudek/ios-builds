@@ -1,0 +1,63 @@
+name: Test iOS app
+run-name: "test · ${{ inputs.app }} · ${{ inputs.source_ref || 'pinned source' }}"
+
+# Unit tests on an iOS Simulator. No signing environment, no secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Reviewed app manifest (apps/<name>.json); native XcodeGen apps only
+        type: choice
+        options: [hex]
+        default: hex
+        required: true
+      source_ref:
+        description: Source branch, tag or commit (empty uses pinned manifest commit)
+        type: string
+        default: ""
+      only_testing:
+        description: "Comma-separated -only-testing targets/classes (empty runs every test)"
+        type: string
+        default: "HEXMobileTests/AutocorrectEngineTests,HEXMobileTests/MultilingualAutocorrectTests"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: control
+          persist-credentials: false
+      - name: Load reviewed app configuration
+        id: config
+        env:
+          APP: ${{ inputs.app }}
+          SOURCE_REF: ${{ inputs.source_ref }}
+        run: python3 control/scripts/config.py "$APP" --ref "$SOURCE_REF"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ fromJSON(steps.config.outputs.config).repository }}
+          ref: ${{ fromJSON(steps.config.outputs.config).ref }}
+          path: source
+          persist-credentials: false
+      - name: Select and verify Xcode
+        env:
+          XCODE_PATH: ${{ vars.XCODE_PATH }}
+        run: bash control/scripts/select-xcode.sh
+      - name: Run unit tests on the simulator
+        env:
+          APP_CONFIG: ${{ steps.config.outputs.config }}
+          ONLY_TESTING: ${{ inputs.only_testing }}
+        run: bash control/scripts/test-xcodegen.sh
+      - name: Upload test log and result bundle
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.app }}-tests
+          path: ${{ runner.temp }}/test-output
+          if-no-files-found: ignore
+          retention-days: 7
