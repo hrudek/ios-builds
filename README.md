@@ -36,7 +36,7 @@ is NOT a signing identity: a certificate/private key and profiles are also neede
 ## First build
 
 Configure artifact encryption first: **[docs/ARTIFACT-ENCRYPTION.md](docs/ARTIFACT-ENCRYPTION.md)**.
-OpenWhispr builds use the personal fork `bearylabs/openwhispr`, pinned in
+OpenWhispr builds use the personal fork `hrudek/openwhispr`, pinned in
 `apps/openwhispr.json`. The current pin includes the optional minimal iOS keyboard.
 Update `default_ref` to a reviewed fork commit to make a newer version the default.
 

@@ -20,7 +20,7 @@ credentials. The widget has no App Group entitlement in the reviewed source.
 ## Current status
 
 Ad Hoc build and signing passed:
-<https://github.com/bearylabs/ios-builds/actions/runs/41423652545>.
+<https://github.com/hrudek/ios-builds/actions/runs/41423652545>.
 The installable IPA is available locally at
 `~/dev/ios-builds/downloads/hex-41423652545/HEX.ipa`.
 Actual signed entitlements were verified on the macOS runner; local checks also
@@ -119,7 +119,7 @@ Ad Hoc is sufficient for the registered personal iPhone.
 
 All 27 local tests and the GitHub infrastructure checks (including workflow lint)
 passed. The first unsigned device archive passed on macOS:
-<https://github.com/bearylabs/ios-builds/actions/runs/41421395787>.
+<https://github.com/hrudek/ios-builds/actions/runs/41421395787>.
 It includes the app, keyboard and widget extension and is published encrypted.
 The subsequent Ad Hoc run linked above also passed signing/export and actual
 Mach-O entitlement verification for all three bundles. That proves the checked

@@ -105,7 +105,7 @@ def main():
         for path in paths:
             output.write(path, path.name)
     subprocess.run(['gh', 'secret', 'set', 'IOS_PROFILES_ZIP_BASE64', '--repo',
-                    'bearylabs/ios-builds', '--env', 'ios-hex-ad-hoc'],
+                    'hrudek/ios-builds', '--env', 'ios-hex-ad-hoc'],
                    input=base64.b64encode(archive.read_bytes()), check=True)
     print('Validated all profiles and uploaded protected provisioning secret.')
 
